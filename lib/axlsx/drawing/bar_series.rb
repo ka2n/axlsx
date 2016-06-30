@@ -23,6 +23,10 @@ module Axlsx
     # An array of rgb colors to apply to your bar chart.
     attr_reader :colors
 
+    # The fill color for this series.
+    # @return [String]
+    attr_reader :color
+
     # Creates a new series
     # @option options [Array, SimpleTypedList] data
     # @option options [Array, SimpleTypedList] labels
@@ -41,6 +45,11 @@ module Axlsx
     # @see colors
     def colors=(v) DataTypeValidator.validate "BarSeries.colors", [Array], v; @colors = v end
 
+    # @see color
+    def color=(v)
+      @color = v
+    end
+
     # The shabe of the bars or columns
     # must be one of  [:cone, :coneToMax, :box, :cylinder, :pyramid, :pyramidToMax]
     def shape=(v)
@@ -53,6 +62,12 @@ module Axlsx
     # @return [String]
     def to_xml_string(str = '')
       super(str) do
+        if color
+          str << '<c:spPr><a:solidFill>'
+          str << ('<a:srgbClr val="' << color << '"/>')
+          str << '</a:solidFill>'
+          str << '</c:spPr>'
+        end
 
         colors.each_with_index do |c, index|
           str << '<c:dPt>'
