@@ -17,7 +17,7 @@ module Axlsx
       @format_code = "General"
       @delete = @label_rotation = 0
       @scaling = Scaling.new(:orientation=>:minMax)
-      @title = @color = nil
+      @title = @color = @grid_color = nil
       self.ax_pos = :b
       self.tick_lbl_pos = :nextTo
       self.format_code = "General"
@@ -30,6 +30,11 @@ module Axlsx
     # e.g. FF0000 for red
     # @return [String]
     attr_reader :color
+
+    # the fill color to use in the gridline shape properties. This should be a 6 character long hex string
+    # e.g. FF0000 for red
+    # @return [String]
+    attr_reader :grid_color
 
     # the id of the axis.
     # @return [Integer]
@@ -89,6 +94,14 @@ module Axlsx
     # @see color
     def color=(color_rgb)
       @color = color_rgb
+    end
+
+    # The color for this gridline. This value is used when rendering the gridline in the chart.
+    # colors should be in 6 character rbg format
+    # @return [String] the rbg color assinged.
+    # @see color
+    def grid_color=(color_rgb)
+      @grid_color = color_rgb
     end
     
     # The crossing axis for this axis
@@ -162,6 +175,10 @@ module Axlsx
         str << '<a:noFill/>'
         str << '</a:ln>'
         str << '</c:spPr>'
+      else
+        if @grid_color
+          str << '<c:spPr><a:ln><a:solidFill><a:srgbClr val="' << @grid_color << '"/></a:solidFill></a:ln></c:spPr>'
+        end
       end
       str << '</c:majorGridlines>'
       @title.to_xml_string(str) unless @title == nil
