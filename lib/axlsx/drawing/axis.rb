@@ -81,12 +81,20 @@ module Axlsx
     # @return [Boolean]
     attr_reader :gridlines
 
+    # specifies the gradient of the gridlines
+    # @return [Float]
+    attr_reader :gridlines_luminance
+
     # specifies if gridlines should be shown in the chart
     # @return [Boolean]
     attr_reader :delete
 
     # the title for the axis. This can be a cell or a fixed string.
     attr_reader :title
+
+    # Text color property
+    # @return [String]
+    attr_reader :text_color
 
     # The color for this axis. This value is used when rendering the axis line in the chart. 
     # colors should be in 6 character rbg format
@@ -129,6 +137,14 @@ module Axlsx
     # default true
     def gridlines=(v) Axlsx::validate_boolean(v); @gridlines = v; end
 
+    # Specify the gridlines luminance
+    # must be a float in (0..1)
+    # default nil
+    def gridlines_luminance=(v)
+      DataTypeValidator.validate 'Axis.gridlines_luminance', Float, v
+      @gridlines_luminance = v
+    end
+
     # Specify if axis should be removed from the chart
     # default false
     def delete=(v) Axlsx::validate_boolean(v); @delete = v; end
@@ -159,6 +175,13 @@ module Axlsx
       end
     end
 
+    # Assigns a text color to the title
+    # colors should be in 6 character rbg format
+    def text_color=(v)
+      DataTypeValidator.validate 'Axis.text_color', String, v
+      @text_color = v
+    end
+
     # Serializes the object
     # @param [String] str
     # @return [String]
@@ -170,15 +193,25 @@ module Axlsx
       str << '<c:majorGridlines>'
       # TODO shape properties need to be extracted into a class
       if gridlines == false
+        # No gridlines
         str << '<c:spPr>'
         str << '<a:ln>'
         str << '<a:noFill/>'
         str << '</a:ln>'
         str << '</c:spPr>'
-      else
-        if @grid_color
-          str << '<c:spPr><a:ln><a:solidFill><a:srgbClr val="' << @grid_color << '"/></a:solidFill></a:ln></c:spPr>'
-        end
+      elsif !@grid_color.nil? then
+        str << '<c:spPr><a:ln><a:solidFill><a:srgbClr val="' << @grid_color << '"/></a:solidFill></a:ln></c:spPr>'
+      elsif !@gridlines_luminance.nil? then
+        # light gridlines
+        str << '<c:spPr>'
+          str << '<a:ln>'
+            str << '<a:solidFill>'
+              str << '<a:schemeClr val="bg2">'
+                str << ('<a:lumMod val="' << (@gridlines_luminance*100000).to_i.to_s << '"/>')
+              str << '</a:schemeClr>'
+            str << '</a:solidFill>'
+          str << '</a:ln>'
+        str << '</c:spPr>'
       end
       str << '</c:majorGridlines>'
       @title.to_xml_string(str) unless @title == nil
@@ -197,7 +230,13 @@ module Axlsx
         str << '</a:solidFill></a:ln></c:spPr>'
       end
       # some potential value in implementing this in full. Very detailed!
-      str << ('<c:txPr><a:bodyPr rot="' << @label_rotation.to_s << '"/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr/></a:p></c:txPr>')
+      str << ('<c:txPr><a:bodyPr rot="' << @label_rotation.to_s << '"/><a:lstStyle/><a:p><a:pPr>')
+      if @text_color.nil? then
+        str << '<a:defRPr/>'
+      else
+        str << ('<a:defRPr><a:solidFill><a:srgbClr val="' << @text_color.to_s << '"/></a:solidFill></a:defRPr>')
+      end
+      str << '</a:pPr><a:endParaRPr/></a:p></c:txPr>'
       str << ('<c:crossAx val="' << @cross_axis.id.to_s << '"/>')
       str << ('<c:crosses val="' << @crosses.to_s << '"/>')
     end
